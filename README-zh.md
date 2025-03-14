@@ -12,8 +12,10 @@
 
 一个aixs接口的uart ip。
 
-还未结束，刚做了2个模块。
-
+还未结束，刚做了3个模块。
+gjAxisBaudrate
+gjAxisUartTx
+gjAxisUartRx
 
 <link rel="stylesheet" type="text/css" href="mkAutoNumber.css" />
 

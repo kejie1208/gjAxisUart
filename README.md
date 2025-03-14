@@ -12,7 +12,11 @@
 
 a UART with an AXIS interSace。
 
-The work is still ongoing; just two modules have been done.
+The work is still on going; just 3 modules have been done.
+
+gjAxisBaudrate
+gjAxisUartTx
+gjAxisUartRx
 
 <link rel="stylesheet" type="text/css" href="mkAutoNumber.css" />
 

@@ -25,9 +25,14 @@ module gjAxisUartTop(
     ,input              rx
 );                  
 
+wire                    powerDown      ;
+wire                    softRst        ;
+
 wire                    clk_enX16   ;
 wire                    clk_en      ;
-wire            [3:0]   mode    ;           //[0] 0:2 stopbit ; 1:1 stopbit
+
+wire            [15:0]  clkDivX16   ;
+wire            [3:0]   mode        ;       //[0] 0:2 stopbit ; 1:1 stopbit
                                             //[1] 0:no check  ; 1: check
                                             //[2] 0:no check  ; 1: check
 
@@ -35,8 +40,17 @@ wire            [15:0]  tx_nop      ;           //nop No. of bits time for one f
 wire                    startError  ;       //1:start error
 
 
+gjAxisBaudrate gjAxisBaudrate(
+     .rst           (    softRst       )
+    ,.clk           (    clk       )
+    ,.clkDivX16     (    clkDivX16 )
+    ,.clk_en        (    clk_en    )
+    ,.clk_enX16     (    clk_enX16 )
+);
+
+
 gjAxisUartTx gjAxisUartTx(
-     .rst           (    rst       )
+     .rst           (    softRst       )
     ,.clk           (    clk       )
 
     ,.clk_en        (    clk_en    )
@@ -51,17 +65,24 @@ gjAxisUartTx gjAxisUartTx(
     ,.tx            (    tx        )
 );
 
+ wire             rxNpkt_tvalid ;
+ wire     [ 7:0]  rxNpkt_tdata  ;    
+ wire             rxNpkt_tuser  ;              
+
+
 gjAxisUartRx gjAxisUartRx(
-     .rst           (    rst        ) 
+     .rst           (    softRst    ) 
     ,.clk           (    clk        ) 
     ,.clk_enX16     (    clk_enX16  ) 
     ,.mode          (    mode       ) 
-    ,.rx_tvalid     (    rx_tvalid  ) 
-    ,.rx_tdata      (    rx_tdata   ) 
-    ,.rx_tuser      (    rx_tuser   ) 
+    ,.rx_tvalid     (    rxNpkt_tvalid  ) 
+    ,.rx_tdata      (    rxNpkt_tdata   ) 
+    ,.rx_tuser      (    rxNpkt_tuser   ) 
     ,.startError    (    startError ) 
     ,.rx            (    rx         ) 
 );
+
+
 
 
 endmodule                  

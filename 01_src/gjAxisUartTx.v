@@ -18,6 +18,7 @@ module gjAxisUartTx(
     ,input              tx_tlast
 
     ,output             tx
+    ,output reg         txEn
 );                  
 
 localparam TXMAX =    8  + 1      + 1 + 2 ;
@@ -49,6 +50,14 @@ assign tx_tready = bcnt==1 & clk_en ;
 
 
 assign tx = txData[TXMAX];
+
+
+always@(posedge clk)            
+if( rst )                                       txEn<= 'h0  ;  // cnt from TXMAX-1 to 0
+else if(!clk_en | !nopEn)                       txEn<= bcnt ;
+else if(  bcnt==0  & tx_tvalid  )               txEn<= 1   ;
+else if(  bcnt==1  & clk_en  )                  txEn<= 0   ;
+
 
 //___________________________________________________for nop
 reg [15:0]  nopCnt; 
