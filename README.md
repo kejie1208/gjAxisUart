@@ -47,7 +47,6 @@ gjAxisUartRx
 | tx_axis_tlast     | I  | Used to control the inter-frame gap      |
 |___________________|___|___________________|
 | rx_axis_tvalid    | O  | AXI receive section                    |
-| rx_axis_tready    | I  |                                  |
 | rx_axis_tdata[7:0]| O  |                                  |
 | rx_axis_tlast     | O  |                                  |
 |___________________|____|___________________|

@@ -1,5 +1,5 @@
-SIM =  _tb.vvp                   
-SRC =  _tb.v  ../01_src/*.v                
+SIM =  gjAxisUartTop_tb.vvp                   
+SRC =  ./gjAxisUartTop_tb.sv  ../01_src/*.v                
              
 								 
 all: compile simulate view       
@@ -10,7 +10,7 @@ compile:
 simulate:                        
 	vvp $(SIM)                       
 view:                            
-	gtkwave  _tb.vcd           
+	gtkwave  gjAxisUartTop_tb.vcd           
 								 
 clean:                           
 	rm -f $(SIM) *.vcd               

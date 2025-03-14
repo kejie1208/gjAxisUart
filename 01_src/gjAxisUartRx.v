@@ -39,17 +39,18 @@ assign start = bcnt == 0 & rx_store==2 ;
 always@(posedge clk)            
 if( rst )                                       pcnt<= 'h0  ;  // cnt from TXMAX-1 to 0
 else if(  start  )                              pcnt<= 15   ;
-else if( clk_enX16 )                            pcnt<= pcnt -1   ;
+else if( clk_enX16 & |bcnt )                    pcnt<= pcnt -1   ;
 
 always@(posedge clk)            
 if( rst )                                       bcnt<= 'h0  ;  // cnt from TXMAX-1 to 0
 else if(!clk_enX16 )                            bcnt<= bcnt ;
 else if(  start & ( mode[0]& mode[1] | mode[0]& mode[2] ) )
-                                                bcnt<= RXMAX -1   ;
-else if(  start & mode[1] )                     bcnt<= RXMAX -2   ;
-else if(  start & mode[2] )                     bcnt<= RXMAX -2   ;
-else if(  start  )                              bcnt<= RXMAX -3   ;
+                                                bcnt<= RXMAX -0   ;
+else if(  start & mode[1] )                     bcnt<= RXMAX -1   ;
+else if(  start & mode[2] )                     bcnt<= RXMAX -1   ;
+else if(  start  )                              bcnt<= RXMAX -2   ;
 else if(  pcnt==0 & startBit & bitSum[1] )      bcnt<= 'h0          ;
+else if(  bcnt==1 & pcnt==1  )                  bcnt<= 0            ;
 else if(  pcnt==0  )                            bcnt<= bcnt -1      ;
 
 //________________________________________ sample 7 8 9 more for bit
@@ -81,7 +82,7 @@ else if(  getBitPoint & mode[1] )               rxData<= {rxData[RXMAX:2] , bitS
 else if(  getBitPoint & mode[2] )               rxData<= {rxData[RXMAX:2] , bitSum[1] ,1'b1  }  ;
 else if(  getBitPoint  )                        rxData<= {rxData[RXMAX:3] , bitSum[1] ,2'b11 }  ;
 
-assign rx_tvalid = bcnt == 1 &  pcnt==0 & clk_enX16 ;
+assign rx_tvalid = bcnt == 1 &  pcnt==6 & clk_enX16 ;
 
 assign rx_tdata = rxData[RXMAX-1 -: 8 ] ;
 

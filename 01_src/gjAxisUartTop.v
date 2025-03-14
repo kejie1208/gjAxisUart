@@ -18,7 +18,6 @@ module gjAxisUartTop(
 
     ,output             rx_tvalid
     ,output     [ 7:0]  rx_tdata
-    ,output             rx_tuser            //1:crc error
     ,output             rx_tlast
 
     ,output             tx
@@ -31,13 +30,49 @@ wire                    softRst        ;
 wire                    clk_enX16   ;
 wire                    clk_en      ;
 
-wire            [15:0]  clkDivX16   ;
 wire            [3:0]   mode        ;       //[0] 0:2 stopbit ; 1:1 stopbit
                                             //[1] 0:no check  ; 1: check
                                             //[2] 0:no check  ; 1: check
+                                            //[3] 0:no tx nop ; 1: enable tx nop
 
-wire            [15:0]  tx_nop      ;           //nop No. of bits time for one frame
-wire                    startError  ;       //1:start error
+wire            [15:0]  clkDivX16   ;
+wire            [15:0]  txByte_nop      ;           //nop No. of bits time for one frame
+wire            [15:0]  txFrame_nop      ;           //nop No. of bits time for one frame
+
+wire                    txBytesInt    ;
+wire                    startError    ;
+wire                    rxBytesInt    ;
+wire                    rxBytesError  ;
+
+wire            [23:0]  maxBytesPerFrame   ;         
+wire            [15:0]  maxRcvGap          ;  
+
+gjAxisUartRegs gjAxisUartRegs(
+     .rst              (    rst              )
+    ,.clk              (    clk              )
+
+    ,.bram_en          (    bram_en          )
+    ,.bram_addr        (    bram_addr        )
+    ,.bram_we          (    bram_we          )
+    ,.bram_wdata       (    bram_wdata       )
+    ,.bram_rdata       (    bram_rdata       )
+
+    ,.powerDown        (    powerDown        )
+    ,.softRst          (    softRst          )
+    ,.mode             (    mode             )
+    ,.clkDivX16        (    clkDivX16        )
+    ,.txByte_nop       (    tx_ntxByte_nopop )
+    ,.txFrame_nop      (    txFrame_nop      )
+    
+    ,.txBytesInt       (    txBytesInt       )
+    ,.startError       (    startError       )
+    ,.rxBytesInt       (    rxBytesInt       )
+    ,.rxBytesError     (    rxBytesError     )
+
+    ,.maxBytesPerFrame (    maxBytesPerFrame )
+    ,.maxRcvGap        (    maxRcvGap        )
+);
+
 
 
 gjAxisBaudrate gjAxisBaudrate(
@@ -56,7 +91,9 @@ gjAxisUartTx gjAxisUartTx(
     ,.clk_en        (    clk_en    )
     ,.mode          (    mode      )
 
-    ,.tx_nop        (    tx_nop    )
+    ,.txByte_nop    (    tx_ntxByte_nopop )
+    ,.txFrame_nop   (    txFrame_nop      )
+
     ,.tx_tvalid     (    tx_tvalid )
     ,.tx_tready     (    tx_tready )
     ,.tx_tdata      (    tx_tdata  )
@@ -65,9 +102,11 @@ gjAxisUartTx gjAxisUartTx(
     ,.tx            (    tx        )
 );
 
- wire             rxNpkt_tvalid ;
- wire     [ 7:0]  rxNpkt_tdata  ;    
- wire             rxNpkt_tuser  ;              
+assign           txBytesInt   =   tx_tvalid & tx_tready ;
+
+ wire             rxNotPkt_tvalid ;
+ wire     [ 7:0]  rxNotPkt_tdata  ;    
+ wire             rxNotPkt_tuser  ;              
 
 
 gjAxisUartRx gjAxisUartRx(
@@ -75,15 +114,32 @@ gjAxisUartRx gjAxisUartRx(
     ,.clk           (    clk        ) 
     ,.clk_enX16     (    clk_enX16  ) 
     ,.mode          (    mode       ) 
-    ,.rx_tvalid     (    rxNpkt_tvalid  ) 
-    ,.rx_tdata      (    rxNpkt_tdata   ) 
-    ,.rx_tuser      (    rxNpkt_tuser   ) 
+    ,.rx_tvalid     (    rxNotPkt_tvalid  ) 
+    ,.rx_tdata      (    rxNotPkt_tdata   ) 
+    ,.rx_tuser      (    rxNotPkt_tuser   ) 
     ,.startError    (    startError ) 
     ,.rx            (    rx         ) 
 );
 
+gjAxisRcvPkt gjAxisRcvPkt(
+     .rst              (      rst              )
+    ,.clk              (      clk              )
 
+    ,.maxBytesPerFrame (      maxBytesPerFrame )
+    ,.maxRcvGap        (      maxRcvGap        )
 
+    ,.clk_en           (      clk_en           )
+    ,.rx_tvalid        (      rxNotPkt_tvalid        )
+    ,.rx_tdata         (      rxNotPkt_tdata         )
+    ,.rx_tuser         (      rxNotPkt_tuser         )
+
+    ,.rx_axis_tvalid   (      rx_tvalid   )
+    ,.rx_axis_tdata    (      rx_tdata    )
+    ,.rx_axis_tlast    (      rx_tlast    )
+);
+
+assign                   rxBytesInt     = rxNotPkt_tvalid  ;
+assign                   rxBytesError   = rxNotPkt_tuser  ;
 
 endmodule                  
 //@regfine    

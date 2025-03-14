@@ -5,7 +5,7 @@ module gjAxisRcvPkt(
      input              rst     
     ,input              clk     
 
-    ,input      [15:0]  maxBytesPerFrame
+    ,input      [23:0]  maxBytesPerFrame
     ,input      [15:0]  maxRcvGap
     ,input              clk_en
 
@@ -17,9 +17,6 @@ module gjAxisRcvPkt(
     ,output     [ 7:0]  rx_axis_tdata
     ,output             rx_axis_tlast
 
-    ,output             startError         //1:start error
-
-    ,input              rx
 );                  
 
 reg     [7:0]   storeData;
@@ -30,12 +27,13 @@ else if( rx_tvalid & !rx_tuser   )  storeData<= rx_tdata;
 
 reg     fstByte;
 reg     timeOutByte;
+reg     bytesOver;
 
-assign  rx_axis_tvalid   =  !fstByte & rx_tvalid | timeOutByte ;      
+assign  rx_axis_tvalid   =  !fstByte & rx_tvalid | timeOutByte | bytesOver;      
 
 
 assign  rx_axis_tdata   =    storeData ;    
-assign  rx_axis_tlast   =    rx_tvalid & rx_tuser &  !fstByte;    
+assign  rx_axis_tlast   =    rx_tvalid & rx_tuser &  !fstByte | timeOutByte | bytesOver;    
 
 
 always@(posedge clk)            
@@ -43,7 +41,7 @@ if( rst )                                   fstByte<= 'h1;
 else if( rx_axis_tvalid & rx_axis_tlast  )  fstByte<= 1;
 else if( rx_tvalid    )                     fstByte<= 0;
 
-//_________________________________________________________________
+//_________________________________________________________________ time over
 
 reg [15:0]  tCnt ;
 
@@ -55,18 +53,24 @@ else if( |tCnt & clk_en )                   tCnt<= tCnt -1 ;
 
 always@(posedge clk)            
 if( rst )                                   timeOutByte<= 'h0;
-else if( tCnt==0     )                      timeOutByte<= 0;
-else if( |tCnt & clk_en )                   timeOutByte<= tCnt -1 ;
+else                                        timeOutByte<= tCnt==0 & !fstByte ;  
 
 
-timeOutByte
+//_________________________________________________________________ bytes over
+
+reg [23:0]  bCnt ;
+
+always@(posedge clk)            
+if( rst )                                   bCnt<= 'hffffff;
+else if( rx_tvalid & fstByte )              bCnt<= maxBytesPerFrame;
+else if( rx_tvalid )                        bCnt<= bCnt -1 ;
 
 
-    ,output             rx_axis_tvalid
-    ,output     [ 7:0]  rx_axis_tdata
-    ,output             rx_axis_tlast
+always@(posedge clk)            
+if( rst )                                   bytesOver<= 'h0;
+else                                        bytesOver<= bCnt==1 ;  
 
-    ,output             startError         //1:start error
+
 
 
 

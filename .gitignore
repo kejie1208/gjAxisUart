@@ -3,3 +3,9 @@
 
 # Vivado
 build
+
+
+# Sim
+
+*.vcd
+*.vvp

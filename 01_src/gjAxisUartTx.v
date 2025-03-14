@@ -10,7 +10,8 @@ module gjAxisUartTx(
                                             //[1] 0:no check  ; 1: check
                                             //[2] 0:no check  ; 1: check
                                             //[3] 0:no tx nop ; 1: enable tx nop
-    ,input      [15:0]  tx_nop              //nop No. of bits time for one frame
+    ,input      [15:0]  txByte_nop              //nop No. of bits time for one byte
+    ,input      [15:0]  txFrame_nop              //nop No. of bits time for one frame
 
     ,input              tx_tvalid
     ,output             tx_tready
@@ -46,7 +47,7 @@ else if(  bcnt==0  & tx_tvalid & mode[2] )      bcnt<= TXMAX -2   ;
 else if(  bcnt==0  & tx_tvalid  )               bcnt<= TXMAX -3   ;
 else                                            bcnt<=  bcnt -1   ;
 
-assign tx_tready = bcnt==1 & clk_en ;
+assign tx_tready = bcnt==1 & clk_en | rst ;
 
 
 assign tx = txData[TXMAX];
@@ -65,11 +66,12 @@ reg [15:0]  nopCnt;
 always@(posedge clk)            
 if( rst )                                       nopCnt<= 0;
 else if( clk_en & mode[3] & tx_tvalid & tx_tready & tx_tlast )
-                                                nopCnt<= tx_nop ;
-else if( clk_en & mode[3] & (|nopCnt) )         nopCnt<= nopCnt -1  ;
-else if( clk_en  )                              nopCnt<= 0;
+                                                nopCnt<= txFrame_nop ;
+else if( clk_en & tx_tvalid & tx_tready )       nopCnt<= txByte_nop  ;
+else if( clk_en & (|nopCnt) )                   nopCnt<= nopCnt -1  ;
 
 assign  nopEn = nopCnt == 0 ;
+
 
 endmodule                  
 //@regfine    

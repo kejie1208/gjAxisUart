@@ -47,7 +47,6 @@ gjAxisUartRx
 | tx_axis_tlast     | I  | 用来控制帧间隔      |
 |___________________|___|___________________|
 | rx_axis_tvalid    | O  | 接收axis  部份                    |
-| rx_axis_tready    | I  |                                  |
 | rx_axis_tdata[7:0]| O  |                                  |
 | rx_axis_tlast     | O  |                                  |
 |___________________|____|___________________|
