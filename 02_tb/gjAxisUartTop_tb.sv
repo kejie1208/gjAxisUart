@@ -108,7 +108,7 @@ initial
                 //$display("baudrate =%d, %d \n ", baudRateIndex , testBaudRate[baudRateIndex]  ) ;
                 pktTest();
                 mode <= mode +1 ;
-                repeat(1000)@(posedge clk);
+                repeat(HALFPERIOD*20000000/testBaudRate[baudRateIndex])@(posedge clk);
               end
             pktTypeIndex =pktTypeIndex +1;
             if(pktTypeIndex == PKGTP) pktTypeIndex = 0 ;
@@ -123,15 +123,15 @@ initial
   end         
 
 //_____________________________________________________________  ck pkg
-integer rcvPkgLen;
+integer rcvPkgLen=0 ;
 always@(posedge clk)
 if( rx_tvalid & rx_tlast )
   begin
     rcvPkgLen = rcvPkgLen +1 ;
-    $$display("rcvPkg len[%d] , rcvByts[%d], errorBytes[%d], startErrorBytes[%d]", rcvPkgLen, 
-                                gjAxisUartTop.gjAxisUartRegs.rxBytes,
-                                gjAxisUartTop.gjAxisUartRegs.rxErrorBytes,
-                                gjAxisUartTop.gjAxisUartRegs.rxStartErrorCnt  );
+    $display("rcvPkg len[%d] , rcvByts[%d], errorBytes[%d], startErrorBytes[%d]", rcvPkgLen,  
+                      gjAxisUartTop.gjAxisUartRegs.rxBytes,   
+                      gjAxisUartTop.gjAxisUartRegs.rxErrorBytes,   
+                      gjAxisUartTop.gjAxisUartRegs.rxStartErrorCnt  );
   end
 else if( rx_tvalid )
   begin
