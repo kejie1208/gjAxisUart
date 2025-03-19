@@ -29,7 +29,7 @@
 
 ## 结构
 
-![gjUartBlock](./00_doc/gjUartBlock.png)
+![gjUartBlock](./00_doc/gjUartBlock.jpg)
 
 ### gjAxisUartRegs
 寄存器模块，因寄存器数量少，将各个模块寄存器存放此模块。
@@ -116,7 +116,7 @@ make
 
 ### 构建示例代码
 
-在对应示例代码目录下运行以下命令即可构建示例代码：
+
 
 ```bash
 

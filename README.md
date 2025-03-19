@@ -28,7 +28,7 @@ The basic functionality of each module has been completed and verified through n
 
 ## Architecture
 
-![gjUartBlock](./00_doc/gjUartBlock.png)
+![gjUartBlock](./00_doc/gjUartBlock.jpg)
 
 ### gjAxisUartRegs
 The register module: Due to the small number of registers, stores the registers of each module in this module. 
