@@ -5,6 +5,9 @@ module gjAxisRcvPkt(
      input              rst     
     ,input              clk     
 
+    ,input              powerDown_tvalid 
+    ,output             powerDown_tready 
+
     ,input      [23:0]  maxBytesPerFrame
     ,input      [15:0]  maxRcvGap
     ,input              clk_en
@@ -53,7 +56,8 @@ else if( |tCnt & clk_en )                   tCnt<= tCnt -1 ;
 
 always@(posedge clk)            
 if( rst )                                   timeOutByte<= 'h0;
-else                                        timeOutByte<= tCnt==0 & !fstByte ;  
+else if( rx_axis_tvalid )                   timeOutByte<= 'h0;
+else                                        timeOutByte<= tCnt==0 & !fstByte | powerDown_tvalid & !fstByte;  
 
 
 //_________________________________________________________________ bytes over
@@ -62,17 +66,18 @@ reg [23:0]  bCnt ;
 
 always@(posedge clk)            
 if( rst )                                   bCnt<= 'hffffff;
-else if( rx_tvalid & fstByte )              bCnt<= maxBytesPerFrame;
+else if( rx_tvalid & fstByte | bytesOver )  bCnt<= maxBytesPerFrame;
 else if( rx_tvalid )                        bCnt<= bCnt -1 ;
 
 
 always@(posedge clk)            
 if( rst )                                   bytesOver<= 'h0;
+else if( rx_axis_tvalid )                   bytesOver<= 'h0;
 else                                        bytesOver<= bCnt==1 ;  
 
 
 
-
+assign powerDown_tready = fstByte | rx_axis_tvalid & rx_axis_tlast ;
 
 
 

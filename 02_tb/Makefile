@@ -5,7 +5,8 @@ SRC =  ./gjAxisUartTop_tb.sv  ../01_src/*.v
 all: compile simulate view       
 								 
 compile:                         
-	iverilog -o $(SIM) $(SRC)        
+	iverilog -o $(SIM) $(SRC)       
+	#verilator -cc $(SIM) $(SRC)     
 								 
 simulate:                        
 	vvp $(SIM)                       

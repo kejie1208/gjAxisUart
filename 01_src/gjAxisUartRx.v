@@ -9,7 +9,7 @@ module gjAxisUartRx(
     ,input      [3:0]   mode                //[0] 0:2 stopbit ; 1:1 stopbit
                                             //[1] 0:no check  ; 1: check
                                             //[2] 0:no check  ; 1: check
-    ,output             rx_tvalid
+    ,output reg         rx_tvalid
     ,output     [ 7:0]  rx_tdata
     ,output             rx_tuser            //1:crc error
 
@@ -51,7 +51,7 @@ else if(  start & mode[2] )                     bcnt<= RXMAX -1   ;
 else if(  start  )                              bcnt<= RXMAX -2   ;
 else if(  pcnt==0 & startBit & bitSum[1] )      bcnt<= 'h0          ;
 else if(  bcnt==1 & pcnt==1  )                  bcnt<= 0            ;
-else if(  pcnt==0  )                            bcnt<= bcnt -1      ;
+else if(  pcnt==0 & (|bcnt) )                   bcnt<= bcnt -1      ;
 
 //________________________________________ sample 7 8 9 more for bit
 
@@ -67,7 +67,7 @@ else if(  clk_enX16 & (|bcnt) & pcnt==7    )    bitSum<= bitSum + rx_store[0];
 else if(  clk_enX16 & (|bcnt) & pcnt==8    )    bitSum<= bitSum + rx_store[0]; 
 else if(  clk_enX16 & (|bcnt) & pcnt==9    )    bitSum<= bitSum + rx_store[0];
 
-wire       getBitPoint = pcnt == 10 & clk_enX16;
+wire       getBitPoint = pcnt == 6 & clk_enX16;
 //________________________________________
 
 reg [RXMAX:1] rxData ;
@@ -77,19 +77,23 @@ if( rst )                                       rxData<= {RXMAX{1'b1}} ;  // cnt
 else if(  start  )                              rxData<= {RXMAX{1'b1}} ; 
 
 else if(  getBitPoint & ( mode[0]& mode[1] | mode[0]& mode[2] ) )
-                                                rxData<= {rxData[RXMAX:1] , bitSum[1] }  ;
-else if(  getBitPoint & mode[1] )               rxData<= {rxData[RXMAX:2] , bitSum[1] ,1'b1  }  ;
-else if(  getBitPoint & mode[2] )               rxData<= {rxData[RXMAX:2] , bitSum[1] ,1'b1  }  ;
-else if(  getBitPoint  )                        rxData<= {rxData[RXMAX:3] , bitSum[1] ,2'b11 }  ;
+                                                rxData<= {          bitSum[1] ,rxData[RXMAX  :2] }  ;
+else if(  getBitPoint & mode[1] )               rxData<= { 1'b1   , bitSum[1] ,rxData[RXMAX-1:2] }  ;
+else if(  getBitPoint & mode[2] )               rxData<= { 1'b1   , bitSum[1] ,rxData[RXMAX-1:2] }  ;
+else if(  getBitPoint  )                        rxData<= { 2'b11  , bitSum[1] ,rxData[RXMAX-2:2] }  ;
 
-assign rx_tvalid = bcnt == 1 &  pcnt==6 & clk_enX16 ;
+always@(posedge clk)            
+if( rst )       rx_tvalid<= 1'b1 ;  
+else            rx_tvalid<= bcnt == 1 &  getBitPoint ;
 
-assign rx_tdata = rxData[RXMAX-1 -: 8 ] ;
+assign rx_tdata = rxData[ 2 +: 8 ] ;
 
+wire rxc    = ^rx_tdata;
+wire ck     = rxData[10] ;
+wire result = rxc ^ ck ;
 
-
-assign             rx_tuser   = mode[2] ?  ^rx_tdata ^  rxData[2]  :
-                                mode[1] ?  ^rx_tdata ^ ~rxData[2]  :
+assign             rx_tuser   = mode[2] ?  ^rx_tdata ^ (~rxData[10])  :
+                                mode[1] ?  ^rx_tdata ^ ( rxData[10])  :
                                 1'b0       ;
                                 
 assign         startError  =  pcnt==0 & startBit & bitSum[1]  & clk_enX16 ;

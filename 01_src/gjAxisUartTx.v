@@ -13,6 +13,9 @@ module gjAxisUartTx(
     ,input      [15:0]  txByte_nop              //nop No. of bits time for one byte
     ,input      [15:0]  txFrame_nop              //nop No. of bits time for one frame
 
+    ,input              powerDown_tvalid 
+    ,output             powerDown_tready 
+
     ,input              tx_tvalid
     ,output             tx_tready
     ,input      [ 7:0]  tx_tdata
@@ -28,20 +31,20 @@ localparam TXMAX =    8  + 1      + 1 + 2 ;
 reg     [TXMAX : 1 ]  txData;
 reg     [3 : 0 ]      bcnt  ;
 
-
 always@(posedge clk)            
 if( rst )                                       txData<= {TXMAX{1'b1}};
 else if(!clk_en | !nopEn)                       txData<= txData ;
-else if(  bcnt==0  & tx_tvalid & mode[1] )      txData<= {1'b0, tx_tdata ,   ^tx_tdata  ,2'b11 }   ;
-else if(  bcnt==0  & tx_tvalid & mode[2] )      txData<= {1'b0, tx_tdata , ~(^tx_tdata) ,2'b11 }   ;
-else if(  bcnt==0  & tx_tvalid   )              txData<= {1'b0, tx_tdata , 1'b1 ,2'b11 }   ;
-else                                            txData<= { txData, 1'b1 }  ;
+else if(  bcnt==0  & tx_tvalid & mode[2] )      txData<= {2'b11 ,  ~(^tx_tdata) , tx_tdata ,1'b0}   ;
+else if(  bcnt==0  & tx_tvalid & mode[1] )      txData<= {2'b11 ,    ^tx_tdata  , tx_tdata ,1'b0}   ;
+else if(  bcnt==0  & tx_tvalid   )              txData<= {2'b11 ,  1'b1         , tx_tdata ,1'b0}   ;
+else                                            txData<= { 1'b1 ,txData[TXMAX : 2] }  ;
 
 always@(posedge clk)            
 if( rst )                                       bcnt<= 'h0  ;  // cnt from TXMAX-1 to 0
 else if(!clk_en | !nopEn)                       bcnt<= bcnt ;
 else if(  bcnt==0  & tx_tvalid & ( mode[0]& mode[1] | mode[0]& mode[2] ) )
                                                 bcnt<= TXMAX -1   ;
+else if(  bcnt==0  & tx_tvalid & mode[0] )      bcnt<= TXMAX -2   ;
 else if(  bcnt==0  & tx_tvalid & mode[1] )      bcnt<= TXMAX -2   ;
 else if(  bcnt==0  & tx_tvalid & mode[2] )      bcnt<= TXMAX -2   ;
 else if(  bcnt==0  & tx_tvalid  )               bcnt<= TXMAX -3   ;
@@ -50,14 +53,14 @@ else                                            bcnt<=  bcnt -1   ;
 assign tx_tready = bcnt==1 & clk_en | rst ;
 
 
-assign tx = txData[TXMAX];
+assign tx = txData[1];
 
 
 always@(posedge clk)            
 if( rst )                                       txEn<= 'h0  ;  // cnt from TXMAX-1 to 0
-else if(!clk_en | !nopEn)                       txEn<= bcnt ;
+else if(!clk_en | !nopEn)                       txEn<= txEn ;
 else if(  bcnt==0  & tx_tvalid  )               txEn<= 1   ;
-else if(  bcnt==1  & clk_en  )                  txEn<= 0   ;
+else if(  bcnt==1  & clk_en & tx_tlast )        txEn<= 0   ;
 
 
 //___________________________________________________for nop
@@ -72,6 +75,7 @@ else if( clk_en & (|nopCnt) )                   nopCnt<= nopCnt -1  ;
 
 assign  nopEn = nopCnt == 0 ;
 
+assign powerDown_tready = bcnt == 0 ;
 
 endmodule                  
 //@regfine    

@@ -15,8 +15,8 @@ module gjAxisUartRegs(
     ,input              softRst   
 
     ,output  reg[3:0]   mode                //[0] 0:2 stopbit ; 1:1 stopbit
-                                            //[1] 0:no check  ; 1: check
-                                            //[2] 0:no check  ; 1: check
+                                            //[1] 0:no check  ; 1: odd  parity check
+                                            //[2] 0:no check  ; 1: even parity check
                                             //[3] 0:no tx nop ; 1: enable tx nop
     ,output reg [15:0]  clkDivX16    
 
@@ -42,7 +42,7 @@ if( rst )                                           mode<= 'h0;
 else if(  bram_en & bram_addr==0 & bram_we[1]   )   mode<= bram_wdata[8 +:4];
 
 always@(posedge clk)            
-if( rst )                   clkDivX16<= 54253;
+if( rst )                   clkDivX16<= 542;
 else if(  bram_en & bram_addr==0    )
     begin
         if( bram_we[3] )    clkDivX16[8 +:8] <= bram_wdata[24 +:8];

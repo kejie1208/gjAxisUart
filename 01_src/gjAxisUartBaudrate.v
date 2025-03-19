@@ -28,8 +28,8 @@ if( rst )                   clk_enX16<= 'h0;
 else                        clk_enX16<= cntX16==1  ;
 
 always@(posedge clk)            
-if( rst )                   clk_enX16<= 'h0;
-else                        clk_enX16<= cntX16==1 & pCnt==0  ;
+if( rst )                   clk_en<= 'h0;
+else                        clk_en<= cntX16==1 & pCnt==0  ;
 
 endmodule                  
 //@regfine    

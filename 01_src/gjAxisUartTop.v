@@ -6,7 +6,7 @@ module gjAxisUartTop(
     ,input              clk     
 
     ,input              bram_en	    
-    ,input      [3:0]   bram_addr   	    
+    ,input      [2:0]   bram_addr   	    
     ,input      [3:0]   bram_we     	    
     ,input      [31:0]  bram_wdata  	    
     ,output     [31:0]  bram_rdata  	
@@ -21,11 +21,12 @@ module gjAxisUartTop(
     ,output             rx_tlast
 
     ,output             tx
+    ,output             txEn
     ,input              rx
 );                  
 
 wire                    powerDown      ;
-wire                    softRst        ;
+reg                     softRst  =1     ;
 
 wire                    clk_enX16   ;
 wire                    clk_en      ;
@@ -61,7 +62,7 @@ gjAxisUartRegs gjAxisUartRegs(
     ,.softRst          (    softRst          )
     ,.mode             (    mode             )
     ,.clkDivX16        (    clkDivX16        )
-    ,.txByte_nop       (    tx_ntxByte_nopop )
+    ,.txByte_nop       (    txByte_nop       )
     ,.txFrame_nop      (    txFrame_nop      )
     
     ,.txBytesInt       (    txBytesInt       )
@@ -84,6 +85,7 @@ gjAxisBaudrate gjAxisBaudrate(
 );
 
 
+wire txPowerDown_tready;
 gjAxisUartTx gjAxisUartTx(
      .rst           (    softRst       )
     ,.clk           (    clk       )
@@ -91,8 +93,11 @@ gjAxisUartTx gjAxisUartTx(
     ,.clk_en        (    clk_en    )
     ,.mode          (    mode      )
 
-    ,.txByte_nop    (    tx_ntxByte_nopop )
+    ,.txByte_nop    (    txByte_nop       )
     ,.txFrame_nop   (    txFrame_nop      )
+
+    ,.powerDown_tvalid (      powerDown        )
+    ,.powerDown_tready (      txPowerDown_tready )
 
     ,.tx_tvalid     (    tx_tvalid )
     ,.tx_tready     (    tx_tready )
@@ -100,6 +105,7 @@ gjAxisUartTx gjAxisUartTx(
     ,.tx_tlast      (    tx_tlast  )
 
     ,.tx            (    tx        )
+    ,.txEn          (    txEn      )
 );
 
 assign           txBytesInt   =   tx_tvalid & tx_tready ;
@@ -121,9 +127,12 @@ gjAxisUartRx gjAxisUartRx(
     ,.rx            (    rx         ) 
 );
 
+wire rxPowerDown_tready;
 gjAxisRcvPkt gjAxisRcvPkt(
      .rst              (      rst              )
     ,.clk              (      clk              )
+    ,.powerDown_tvalid (      powerDown        )
+    ,.powerDown_tready (      rxPowerDown_tready )
 
     ,.maxBytesPerFrame (      maxBytesPerFrame )
     ,.maxRcvGap        (      maxRcvGap        )
@@ -140,6 +149,13 @@ gjAxisRcvPkt gjAxisRcvPkt(
 
 assign                   rxBytesInt     = rxNotPkt_tvalid  ;
 assign                   rxBytesError   = rxNotPkt_tuser  ;
+
+
+//___________________________
+always@(posedge clk)            
+if( rst )                softRst<= 'h1;
+else                     softRst<=  powerDown & rxPowerDown_tready & txPowerDown_tready  ;
+
 
 endmodule                  
 //@regfine    
